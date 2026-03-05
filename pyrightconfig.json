@@ -1,0 +1,10 @@
+{
+  "include": ["client", "server", "generated"],
+  "exclude": [".venv", "**/__pycache__", "**/*.pyc"],
+  "pythonVersion": "3.10",
+  "pythonPath": ".venv/bin/python",
+  "extraPaths": ["${workspaceRoot}/generated", "${workspaceRoot}"],
+  "typeCheckingMode": "off",
+  "reportMissingImports": false
+}
+
