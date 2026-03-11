@@ -43,9 +43,16 @@ make client   # Streamlit en http://localhost:8501
 ## Otros comandos
 
 ```bash
-make lint    # Ruff: revisar y formatear código
-make clean   # Borrar venv y archivos generados
+make kill       # Detener el servidor (libera el puerto 50051)
+make test       # Ejecutar pruebas unitarias
+make mlflow-ui  # Ver dashboard de métricas en http://localhost:5000
+make resultados # Ver resultados guardados en resultados/
+make lint       # Ruff: revisar y formatear código
+make clean      # Borrar venv y archivos generados
 ```
+
+> **Nota (Windows):** Si al hacer `make server` sale error de puerto ocupado,
+> ejecuta `make kill` primero para liberar el puerto 50051.
 
 ## Modelos
 
