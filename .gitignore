@@ -42,3 +42,18 @@ generated/
 # ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+
+# ── Documentacion interna (no se sube) ───────────────────────────────────
+REFACTORS_CHANGES.md
+STRUCTURE.md
+SUMMARY.md
+USAGE_GUIDE.md
+
+# ── Claude Code ──────────────────────────────────────────────────────────
+.claude/
+
+# ── MLflow runs ──────────────────────────────────────────────────────────
+mlruns/
+
+# ── Resultados generados ─────────────────────────────────────────────────
+resultados/
