@@ -1,7 +1,7 @@
 """Tests unitarios para SitreServicer."""
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from src.grpc_servicer import SitreServicer
 

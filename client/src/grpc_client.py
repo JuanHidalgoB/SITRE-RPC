@@ -22,8 +22,7 @@ try:
     import sitre_pb2_grpc
 except ImportError as e:
     raise ImportError(
-        f"No se pudo importar módulos proto. ¿Ejecutaste 'make setup'?\n"
-        f"Error: {e}"
+        f"No se pudo importar módulos proto. ¿Ejecutaste 'make setup'?\nError: {e}"
     ) from e
 
 log = logging.getLogger(__name__)

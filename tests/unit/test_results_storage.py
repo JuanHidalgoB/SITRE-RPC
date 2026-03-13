@@ -2,8 +2,6 @@
 
 import json
 import pytest
-from pathlib import Path
-
 from src.storage.results_storage import ResultsStorage
 
 

@@ -123,16 +123,12 @@ if "Pipeline" in modo:
         st.download_button("⬇ Descargar resumen", result["resumen"], "resumen.txt")
 
         st.divider()
-        if st.button(
-            "🔄 Procesar otro audio", type="secondary", use_container_width=True
-        ):
+        if st.button("🔄 Procesar otro audio", type="secondary", use_container_width=True):
             st.session_state.pipeline_result = None
             st.rerun()
     else:
         # Formulario para enviar
-        audio_file = st.file_uploader(
-            "Archivo de audio", type=["mp3", "wav", "m4a", "ogg", "flac"]
-        )
+        audio_file = st.file_uploader("Archivo de audio", type=["mp3", "wav", "m4a", "ogg", "flac"])
         if audio_file:
             st.audio(audio_file)
             if st.button("▶ Procesar", type="primary", use_container_width=True):
@@ -285,4 +281,3 @@ mT5-base fine-tuned en DACSA · ~580M params
   ├─ Whisper-small
   └─ mT5-dacsa-es"""
     )
-

@@ -98,9 +98,7 @@ class TranscriptionService:
             )
 
             elapsed = round(time.time() - t0, 2)
-            log.info(
-                f"✓ Transcripción completada: {len(texto)} caracteres en {elapsed}s"
-            )
+            log.info(f"✓ Transcripción completada: {len(texto)} caracteres en {elapsed}s")
 
             return texto, elapsed
 
