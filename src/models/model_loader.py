@@ -76,7 +76,9 @@ class ModelLoader:
         log.info(f"✓ Todos los modelos cargados en {total_time:.1f}s")
         log.info("═" * 60)
 
-        return cls(asr, summ)
+        instance = cls(asr, summ)
+        instance.load_time_s = total_time
+        return instance
 
     def get_asr_model(self) -> WhisperASRModel:
         """Obtiene el modelo ASR.

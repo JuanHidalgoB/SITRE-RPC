@@ -46,6 +46,7 @@ log = logging.getLogger(__name__)
 
 # ─── Inicialización ───────────────────────────────────────────────────────────
 
+
 def main():
     """Punto de entrada del servidor.
 
@@ -71,6 +72,12 @@ def main():
 
         # Configurar tracker MLflow
         tracker = MLflowTracker()
+        tracker.register_models(
+            whisper_size=WHISPER_SIZE,
+            mt5_model=MT5_MODEL,
+            device=DEVICE,
+            load_time_s=model_loader.load_time_s,
+        )
 
         # Crear servicer
         servicer = SitreServicer(model_loader, storage, tracker)

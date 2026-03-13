@@ -7,6 +7,7 @@ incluyendo parámetros de entrada y métricas de rendimiento.
 import logging
 
 import mlflow
+from mlflow.tracking import MlflowClient
 
 from src.config import MLFLOW_EXPERIMENT, MLFLOW_TRACKING_URI
 
@@ -74,19 +75,23 @@ class MLflowTracker:
 
         try:
             with mlflow.start_run():
-                mlflow.log_params({
-                    "formato": formato,
-                    "idioma": idioma,
-                    "whisper_size": whisper_size,
-                    "mt5_model": mt5_model,
-                })
-                mlflow.log_metrics({
-                    "elapsed_asr_s": elapsed_asr,
-                    "elapsed_sum_s": elapsed_sum,
-                    "total_s": round(elapsed_asr + elapsed_sum, 2),
-                    "transcripcion_len": transcripcion_len,
-                    "resumen_len": resumen_len,
-                })
+                mlflow.log_params(
+                    {
+                        "formato": formato,
+                        "idioma": idioma,
+                        "whisper_size": whisper_size,
+                        "mt5_model": mt5_model,
+                    }
+                )
+                mlflow.log_metrics(
+                    {
+                        "whisper_transcripcion_tiempo_s": elapsed_asr,
+                        "mt5_resumen_tiempo_s": elapsed_sum,
+                        "pipeline_total_tiempo_s": round(elapsed_asr + elapsed_sum, 2),
+                        "whisper_output_caracteres": transcripcion_len,
+                        "mt5_output_caracteres": resumen_len,
+                    }
+                )
         except Exception as e:
             log.warning(f"Error al registrar en MLflow (no crítico): {e}")
 
@@ -111,10 +116,12 @@ class MLflowTracker:
         try:
             with mlflow.start_run():
                 mlflow.log_params({"formato": formato, "idioma": idioma})
-                mlflow.log_metrics({
-                    "elapsed_asr_s": elapsed_s,
-                    "transcripcion_len": transcripcion_len,
-                })
+                mlflow.log_metrics(
+                    {
+                        "whisper_transcripcion_tiempo_s": elapsed_s,
+                        "whisper_output_caracteres": transcripcion_len,
+                    }
+                )
         except Exception as e:
             log.warning(f"Error al registrar en MLflow (no crítico): {e}")
 
@@ -136,10 +143,95 @@ class MLflowTracker:
 
         try:
             with mlflow.start_run():
-                mlflow.log_metrics({
-                    "elapsed_sum_s": elapsed_s,
-                    "texto_len": texto_len,
-                    "resumen_len": resumen_len,
-                })
+                mlflow.log_metrics(
+                    {
+                        "mt5_resumen_tiempo_s": elapsed_s,
+                        "mt5_input_caracteres": texto_len,
+                        "mt5_output_caracteres": resumen_len,
+                    }
+                )
         except Exception as e:
             log.warning(f"Error al registrar en MLflow (no crítico): {e}")
+
+    def register_models(
+        self,
+        whisper_size: str,
+        mt5_model: str,
+        device: str,
+        load_time_s: float,
+    ) -> None:
+        """Registra los modelos cargados en el MLflow Model Registry.
+
+        Crea un run de carga inicial con la configuración de los modelos
+        y los registra en el Model Registry de MLflow para seguimiento
+        de versiones.
+
+        Args:
+            whisper_size: Tamaño del modelo Whisper ('tiny', 'small', etc).
+            mt5_model: Identificador HuggingFace del modelo mT5.
+            device: Dispositivo de ejecución ('cpu' o 'cuda').
+            load_time_s: Tiempo total de carga de ambos modelos en segundos.
+        """
+        if not self.enabled:
+            return
+
+        try:
+            client = MlflowClient()
+
+            # Run dedicado al registro de modelos
+            with mlflow.start_run(run_name="registro-modelos") as run:
+                mlflow.set_tag("tipo", "carga-inicial")
+                mlflow.log_params(
+                    {
+                        "whisper_size": whisper_size,
+                        "mt5_model": mt5_model,
+                        "device": device,
+                    }
+                )
+                mlflow.log_metric("modelos_carga_tiempo_s", round(load_time_s, 2))
+                mlflow.log_dict(
+                    {
+                        "asr": {
+                            "model_id": f"openai/whisper-{whisper_size}",
+                            "task": "automatic-speech-recognition",
+                            "language": "es",
+                        },
+                        "summarization": {
+                            "model_id": mt5_model,
+                            "task": "summarization",
+                            "language": "es",
+                        },
+                        "device": device,
+                        "load_time_s": round(load_time_s, 2),
+                    },
+                    "model_config.json",
+                )
+                run_id = run.info.run_id
+
+            # Registrar en el Model Registry
+            modelos = [
+                (
+                    "sitre-whisper-asr",
+                    f"Whisper-{whisper_size} para transcripción de audio en español",
+                ),
+                (
+                    "sitre-mt5-summarization",
+                    f"{mt5_model} para resumen ejecutivo en español",
+                ),
+            ]
+            for nombre, descripcion in modelos:
+                try:
+                    client.create_registered_model(name=nombre, description=descripcion)
+                except Exception:
+                    pass  # El modelo ya existe en el registry; solo añadimos versión
+
+                client.create_model_version(
+                    name=nombre,
+                    source=f"runs:/{run_id}/model_config.json",
+                    run_id=run_id,
+                    description=f"Cargado desde HuggingFace Hub. Device: {device}",
+                )
+                log.info(f"✓ Modelo registrado en MLflow Registry: {nombre}")
+
+        except Exception as e:
+            log.warning(f"Error al registrar modelos en MLflow (no crítico): {e}")

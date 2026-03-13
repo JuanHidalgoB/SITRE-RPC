@@ -17,4 +17,4 @@ DEVICE = "cpu"
 
 # ─── MLflow ───────────────────────────────────────────────────────────────────
 MLFLOW_EXPERIMENT = "sitre-rpc-inference"
-MLFLOW_TRACKING_URI = "mlruns"
+MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
