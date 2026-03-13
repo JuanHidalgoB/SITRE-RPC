@@ -1,9 +1,9 @@
-# ── Entorno virtual ──────────────────────────────────────────────────────────
+#Entorno virtual
 .venv/
 venv/
 env/
 
-# ── Python ────────────────────────────────────────────────────────────────────
+#Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -13,47 +13,45 @@ dist/
 build/
 *.egg
 
-# ── Código generado (regenerado con: make setup) ──────────────────────────────
+#Código generado
 generated/
 
-# ── Variables de entorno ──────────────────────────────────────────────────────
+#Variables de entorno
 .env
-# .env.example  ← este SÍ se sube (sirve como plantilla)
 
-# ── Cachés de herramientas ────────────────────────────────────────────────────
+#Cachés de herramientas
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
 .cache/
 
-# ── Modelos descargados por HuggingFace/Whisper ───────────────────────────────
-# (se descargan automáticamente la primera vez que se corre el servidor)
+#Modelos descargados por HuggingFace/Whisper
 *.pt
 *.pth
 *.bin
 *.safetensors
 
-# ── Editor ────────────────────────────────────────────────────────────────────
+#Editor
 .vscode/settings.json
 .idea/
 *.swp
 *~
 
-# ── OS ────────────────────────────────────────────────────────────────────────
+#OS
 .DS_Store
 Thumbs.db
 
-# ── Documentacion interna (no se sube) ───────────────────────────────────
+
 REFACTORS_CHANGES.md
 STRUCTURE.md
 SUMMARY.md
 USAGE_GUIDE.md
 
-# ── Claude Code ──────────────────────────────────────────────────────────
 .claude/
 
-# ── MLflow runs ──────────────────────────────────────────────────────────
+#MLflow 
 mlruns/
+mlflow.db
 
-# ── Resultados generados ─────────────────────────────────────────────────
+#Resultados generados
 resultados/

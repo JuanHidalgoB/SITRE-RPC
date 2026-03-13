@@ -8,6 +8,7 @@
 # Resultados y tracking (se montan como volúmenes)
 resultados/
 mlruns/
+mlflow.db
 
 # Cache Python
 __pycache__/
