@@ -4,6 +4,7 @@ Aplicación web interactiva para transcribir audio y generar resúmenes
 mediante el servidor SITRE-RPC.
 """
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -20,7 +21,7 @@ from grpc_client import SitreClient
 
 # ─── Configuración ────────────────────────────────────────────────────────────
 
-SERVER_ADDR = "localhost:50051"
+SERVER_ADDR = os.getenv("SITRE_SERVER_ADDR", "localhost:50051")
 
 st.set_page_config(page_title="SITRE-RPC", page_icon="🎙️", layout="centered")
 

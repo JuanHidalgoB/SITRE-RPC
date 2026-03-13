@@ -1,0 +1,33 @@
+#  SITRE-RPC — Docker Compose
+
+services:
+
+  #Servidor gRPC
+  server:
+    build: .
+    command: python server/main.py
+    ports:
+      - "50051:50051"
+    volumes:
+      - resultados:/app/resultados
+      - mlruns:/app/mlruns
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      - HF_HOME=/root/.cache/huggingface
+
+  #Cliente Streamlit
+  client:
+    build: .
+    command: streamlit run client/app.py --server.port 8501 --server.headless true
+    ports:
+      - "8501:8501"
+    environment:
+      - SITRE_SERVER_ADDR=server:50051
+    depends_on:
+      - server
+
+#Volúmenes persistentes
+volumes:
+  resultados:   # resultados JSON del pipeline
+  mlruns:       # experimentos MLflow
+  hf_cache:     # modelos descargados de HuggingFace (evita re-descarga)
