@@ -181,6 +181,8 @@ make mlflow-ui
 | Transcribir | `whisper_transcripcion_tiempo_s`, `whisper_output_caracteres` |
 | Resumir | `mt5_resumen_tiempo_s`, `mt5_input_caracteres`, `mt5_output_caracteres` |
 
+**Metrica de carga:** `modelos_carga_tiempo_s` (registrada al iniciar el servidor)
+
 **Modelos registrados:** `sitre-whisper-asr`, `sitre-mt5-summarization`
 
 ---
