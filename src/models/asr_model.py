@@ -73,6 +73,7 @@ class WhisperASRModel:
                 audio=audio,
                 language=language,
                 verbose=verbose,
+                fp16=False,
             )
             return result["text"].strip()
         except Exception as e:

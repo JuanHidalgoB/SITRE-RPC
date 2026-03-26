@@ -80,12 +80,12 @@ class TranscriptionService:
         Raises:
             Exception: Si ocurre error en libros o Whisper.
         """
-        import librosa
+        import whisper as _whisper
 
         log.info(f"Transcribiendo archivo: {file_path}")
 
-        # Cargar audio con librosa (no requiere ffmpeg en Windows)
-        audio, sr = librosa.load(file_path, sr=16000, mono=True)
+        # Cargar audio con whisper.load_audio para garantizar compatibilidad en CPU
+        audio = _whisper.load_audio(file_path)
 
         t0 = time.time()
 
