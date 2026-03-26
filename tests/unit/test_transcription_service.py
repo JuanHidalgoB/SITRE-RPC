@@ -83,14 +83,13 @@ def test_transcribe_extension_usa_formato(service):
 
 def test_transcribe_propagates_model_exception(service, mock_asr_model):
     """Errores del modelo deben propagarse al llamador."""
-    mock_asr_model.transcribe.side_effect = RuntimeError("modelo falló")
-
     import numpy as np
+
+    mock_asr_model.transcribe.side_effect = RuntimeError("modelo falló")
     fake_audio = np.zeros(16000, dtype="float32")
 
-    with patch.dict("sys.modules", {"librosa": MagicMock()}):
-        import sys
-        sys.modules["librosa"].load.return_value = (fake_audio, 16000)
+    with patch("src.services.transcription_service._whisper") as mock_whisper:
+        mock_whisper.load_audio.return_value = fake_audio
 
         with pytest.raises(RuntimeError, match="modelo falló"):
             service._transcribe_file("/fake/audio.mp3", language="es")
