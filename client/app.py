@@ -51,6 +51,8 @@ if "pipeline_result" not in st.session_state:
     st.session_state.pipeline_result = None
 if "resumen_result" not in st.session_state:
     st.session_state.resumen_result = None
+if "is_processing" not in st.session_state:
+    st.session_state.is_processing = False
 
 
 @st.cache_resource
@@ -130,12 +132,15 @@ if "Pipeline" in modo:
         # Formulario para enviar
         audio_file = st.file_uploader("Archivo de audio", type=["mp3", "wav", "m4a", "ogg", "flac"])
         if audio_file:
-            st.audio(audio_file)
-            if st.button("▶ Procesar", type="primary", use_container_width=True):
+            audio_bytes = audio_file.read()
+            st.audio(audio_bytes)
+            if st.button("▶ Procesar", type="primary", use_container_width=True, disabled=st.session_state.is_processing):
                 try:
+                    st.session_state.is_processing = True
                     client = get_client()
                     if not client:
                         st.error(f"❌ No se puede conectar al servidor ({SERVER_ADDR})")
+                        st.session_state.is_processing = False
                         st.stop()
 
                     t0 = time.time()
@@ -155,7 +160,7 @@ if "Pipeline" in modo:
                     # Procesamiento en el servidor
                     fmt = audio_file.name.rsplit(".", 1)[-1].lower()
                     resp = client.procesar_audio(
-                        audio_bytes=audio_file.read(),
+                        audio_bytes=audio_bytes,
                         formato=fmt,
                         idioma="spanish",
                     )
@@ -185,10 +190,12 @@ if "Pipeline" in modo:
                             "elapsed_sum": resp.elapsed_sum,
                             "total": total,
                         }
+                        st.session_state.is_processing = False
                         st.success("✅ Procesamiento completado")
                         st.rerun()
 
                 except Exception as e:
+                    st.session_state.is_processing = False
                     st.error(f"❌ Error: {e}")
 
 # ─── Solo resumen ─────────────────────────────────────────────────────────────
