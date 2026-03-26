@@ -1,0 +1,31 @@
+# Entorno virtual
+.venv/
+
+# Git
+.git/
+.gitignore
+
+# Resultados y tracking (se montan como volúmenes)
+resultados/
+mlruns/
+mlflow.db
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Archivos generados del proto (se regeneran en la build)
+generated/
+
+# Documentación interna y herramientas de desarrollo
+.claude/
+CLAUDE.md
+ARCHITECTURE.md
+
+# Entorno local
+.env
+.env.*
+!.env.example

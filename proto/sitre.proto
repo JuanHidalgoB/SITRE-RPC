@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package sitre;
+
+service SitreService {
+  // Pipeline completo: audio → transcripción + resumen
+  rpc Procesar    (AudioRequest) returns (ProcesarResponse);
+  // Solo ASR
+  rpc Transcribir (AudioRequest) returns (TranscripcionResponse);
+  // Solo resumen a partir de texto
+  rpc Resumir     (TextoRequest) returns (ResumenResponse);
+}
+
+message AudioRequest {
+  bytes  audio   = 1;
+  string formato = 2;  // "mp3", "wav", etc.
+  string idioma  = 3;  // "spanish" por defecto
+}
+
+message TextoRequest {
+  string texto = 1;
+}
+
+message TranscripcionResponse {
+  string transcripcion = 1;
+  float  elapsed_s     = 2;
+  string error         = 3;
+}
+
+message ResumenResponse {
+  string resumen   = 1;
+  float  elapsed_s = 2;
+  string error     = 3;
+}
+
+message ProcesarResponse {
+  string transcripcion = 1;
+  string resumen       = 2;
+  float  elapsed_asr   = 3;
+  float  elapsed_sum   = 4;
+  string error         = 5;
+}

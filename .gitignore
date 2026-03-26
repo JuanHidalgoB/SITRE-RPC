@@ -1,0 +1,58 @@
+#Entorno virtual
+.venv/
+venv/
+env/
+
+#Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+#Código generado
+generated/
+
+#Variables de entorno
+.env
+
+#Cachés de herramientas
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.cache/
+
+#Modelos descargados por HuggingFace/Whisper
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+#Editor
+.vscode/settings.json
+.idea/
+*.swp
+*~
+
+#OS
+.DS_Store
+Thumbs.db
+
+
+REFACTORS_CHANGES.md
+STRUCTURE.md
+SUMMARY.md
+USAGE_GUIDE.md
+CLAUDE.md
+
+.claude/
+
+#MLflow 
+mlruns/
+mlflow.db
+
+#Resultados generados
+resultados/
