@@ -88,8 +88,6 @@ def test_transcribe_propagates_model_exception(service, mock_asr_model):
     mock_asr_model.transcribe.side_effect = RuntimeError("modelo falló")
     fake_audio = np.zeros(16000, dtype="float32")
 
-    with patch("src.services.transcription_service._whisper") as mock_whisper:
-        mock_whisper.load_audio.return_value = fake_audio
-
+    with patch("whisper.load_audio", return_value=fake_audio):
         with pytest.raises(RuntimeError, match="modelo falló"):
             service._transcribe_file("/fake/audio.mp3", language="es")
