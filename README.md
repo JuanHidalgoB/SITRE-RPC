@@ -1,7 +1,4 @@
 # SITRE-RPC
-<<<<<<< HEAD
-SITRE-RPC es una solución de ingeniería de software diseñada para el procesamiento eficiente de audio en español. Utiliza una arquitectura de microservicios basada en gRPC para conectar un cliente de interfaz con un servidor de inferencia de Inteligencia Artificial.
-=======
 
 **Sistema de Transcripción y Resumen Ejecutivo** — pipeline distribuido de IA para transcribir audio en español y generar resúmenes ejecutivos, implementado con gRPC, Whisper y mT5.
 
@@ -198,4 +195,3 @@ make test
 ```
 
 Cobertura: servicer gRPC, almacenamiento de resultados, servicio de transcripcion y servicio de resumen.
->>>>>>> dev
