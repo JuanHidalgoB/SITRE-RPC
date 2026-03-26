@@ -1,0 +1,94 @@
+# =============================================================================
+# SITRE-RPC — GitLab CI/CD Pipeline
+# Variables requeridas en GitLab > Settings > CI/CD > Variables:
+#   DOCKERHUB_USERNAME   — Usuario de DockerHub
+#   DOCKERHUB_PASSWORD   — Contraseña/token de DockerHub
+#   DO_SSH_PRIVATE_KEY   — Clave SSH privada para el Droplet
+#   DO_DROPLET_IP        — IP pública del Droplet
+#   DO_DEPLOY_USER       — Usuario SSH del Droplet (ej. root)
+# =============================================================================
+
+variables:
+  UV_VERSION: "0.5.1"
+  PYTHON_VERSION: "3.10"
+  BASE_LAYER: "bookworm-slim"
+  IMAGEN_NAME: "$DOCKERHUB_USERNAME/sitre-rpc"
+  UV_CACHE_DIR: ".uv-cache"
+  DOCKER_BUILDKIT: 1
+
+stages:
+  - setup-test-lint
+  - build
+  - deploy
+
+# -----------------------------------------------------------------------------
+# Instala dependencias, compila stubs gRPC, ejecuta lint y tests
+# -----------------------------------------------------------------------------
+run_test:
+  stage: setup-test-lint
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  before_script:
+    - apt-get update -qq && apt-get install -y --no-install-recommends make ffmpeg
+    - rm -rf /var/lib/apt/lists/*
+  script:
+    - make setup
+    - make lint
+    - make test
+  cache:
+    key:
+      files:
+        - pyproject.toml
+        - uv.lock
+    paths:
+      - .uv-cache/
+
+# -----------------------------------------------------------------------------
+# Construye la imagen Docker y la sube a DockerHub (solo en main)
+# -----------------------------------------------------------------------------
+build_image:
+  stage: build
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  image: docker:29.0-cli
+  services:
+    - docker:29.0-dind
+  before_script:
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  script:
+    - docker pull $IMAGEN_NAME:latest || true
+    - >
+      docker build
+      --cache-from $IMAGEN_NAME:latest
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      -t $IMAGEN_NAME:$CI_COMMIT_SHORT_SHA
+      -t $IMAGEN_NAME:latest
+      .
+    - docker push $IMAGEN_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGEN_NAME:latest
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# -----------------------------------------------------------------------------
+# Despliega en el Droplet vía SSH (solo en main)
+# -----------------------------------------------------------------------------
+deploy:
+  stage: deploy
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$DO_SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H "$DO_DROPLET_IP" >> ~/.ssh/known_hosts
+  script:
+    - |
+      ssh "$DO_DEPLOY_USER@$DO_DROPLET_IP" "
+        docker pull $IMAGEN_NAME:latest &&
+        cd /opt/sitre-rpc &&
+        docker compose up -d --remove-orphans
+      "
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  environment:
+    name: production
+    url: http://$DO_DROPLET_IP:8501
