@@ -1,12 +1,10 @@
-# =============================================================================
 # SITRE-RPC — GitLab CI/CD Pipeline
 # Variables requeridas en GitLab > Settings > CI/CD > Variables:
 #   DOCKERHUB_USERNAME   — Usuario de DockerHub
 #   DOCKERHUB_PASSWORD   — Contraseña/token de DockerHub
-#   DO_SSH_PRIVATE_KEY   — Clave SSH privada para el Droplet
+#   DO_SSH_PRIVATE_KEY   — Clave SSH privada para el Droplet (base64)
 #   DO_DROPLET_IP        — IP pública del Droplet
 #   DO_DEPLOY_USER       — Usuario SSH del Droplet (ej. root)
-# =============================================================================
 
 variables:
   UV_VERSION: "0.5.1"
@@ -17,23 +15,22 @@ variables:
   DOCKER_BUILDKIT: 1
 
 stages:
-  - setup-test-lint
+  - setup
+  - lint
+  - test
   - build
   - deploy
 
-# -----------------------------------------------------------------------------
-# Instala dependencias, compila stubs gRPC, ejecuta lint y tests
-# -----------------------------------------------------------------------------
-run_test:
-  stage: setup-test-lint
+# Instala dependencias con UV y compila los stubs de gRPC.
+# Pasa el entorno virtual y los stubs a los siguientes jobs via artefactos.
+setup:
+  stage: setup
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   before_script:
     - apt-get update -qq && apt-get install -y --no-install-recommends make ffmpeg
     - rm -rf /var/lib/apt/lists/*
   script:
     - make setup
-    - make lint
-    - make test
   cache:
     key:
       files:
@@ -41,12 +38,46 @@ run_test:
         - uv.lock
     paths:
       - .uv-cache/
+  artifacts:
+    paths:
+      - .venv/
+      - generated/
+    expire_in: 1 hour
 
-# -----------------------------------------------------------------------------
-# Construye la imagen Docker y la sube a DockerHub (solo en main)
-# -----------------------------------------------------------------------------
+# Revisa y formatea el código con Ruff.
+# Corre en paralelo con test, ambos dependen de setup.
+lint:
+  stage: lint
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  needs:
+    - job: setup
+      artifacts: true
+  before_script:
+    - apt-get update -qq && apt-get install -y --no-install-recommends make
+    - rm -rf /var/lib/apt/lists/*
+  script:
+    - make lint
+
+# Ejecuta la suite de pruebas con pytest.
+# Corre en paralelo con lint, ambos dependen de setup.
+test:
+  stage: test
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  needs:
+    - job: setup
+      artifacts: true
+  before_script:
+    - apt-get update -qq && apt-get install -y --no-install-recommends make ffmpeg
+    - rm -rf /var/lib/apt/lists/*
+  script:
+    - make test
+
+# Construye la imagen Docker y la sube a DockerHub (solo en main).
 build_image:
   stage: build
+  needs:
+    - job: lint
+    - job: test
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
   image: docker:29.0-cli
@@ -68,11 +99,11 @@ build_image:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
-# -----------------------------------------------------------------------------
-# Despliega en el Droplet vía SSH (solo en main)
-# -----------------------------------------------------------------------------
+# Despliega en el Droplet vía SSH (solo en main).
 deploy:
   stage: deploy
+  needs:
+    - job: build_image
   image: ubuntu:22.04
   before_script:
     - apt-get update -qq && apt-get install -y -qq openssh-client
