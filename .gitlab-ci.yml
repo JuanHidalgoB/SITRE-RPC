@@ -16,8 +16,7 @@ variables:
 
 stages:
   - setup
-  - lint
-  - test
+  - lint & test
   - build
   - deploy
 
@@ -47,7 +46,7 @@ setup:
 # Revisa y formatea el código con Ruff.
 # Corre en paralelo con test, ambos dependen de setup.
 lint:
-  stage: lint
+  stage: lint & test
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   needs:
     - job: setup
@@ -61,7 +60,7 @@ lint:
 # Ejecuta la suite de pruebas con pytest.
 # Corre en paralelo con lint, ambos dependen de setup.
 test:
-  stage: test
+  stage: lint & test
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   needs:
     - job: setup
