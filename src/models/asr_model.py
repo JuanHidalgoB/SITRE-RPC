@@ -5,6 +5,7 @@ en dispositivos CPU.
 """
 
 import logging
+import threading
 import time
 
 log = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class WhisperASRModel:
         """
         self.model = model
         self.device = device
+        self._lock = threading.Lock()
 
     @classmethod
     def load(cls, model_name: str = "small", device: str = "cpu") -> "WhisperASRModel":
@@ -68,14 +70,15 @@ class WhisperASRModel:
         Raises:
             Exception: Si ocurre error durante la transcripción.
         """
-        try:
-            result = self.model.transcribe(
-                audio=audio,
-                language=language,
-                verbose=verbose,
-                fp16=False,
-            )
-            return result["text"].strip()
-        except Exception as e:
-            log.error(f"Error en transcripción: {e}")
-            raise
+        with self._lock:
+            try:
+                result = self.model.transcribe(
+                    audio=audio,
+                    language=language,
+                    verbose=verbose,
+                    fp16=False,
+                )
+                return result["text"].strip()
+            except Exception as e:
+                log.error(f"Error en transcripción: {e}")
+                raise
