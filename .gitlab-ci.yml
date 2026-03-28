@@ -36,10 +36,8 @@ lint:
   needs:
     - job: setup
       artifacts: true
-  variables:
-    VIRTUAL_ENV: /ci/.venv
-    PATH: /ci/.venv/bin:$PATH
   script:
+    - export PATH="/ci/.venv/bin:$PATH"
     - ruff check . --fix --exclude generated/
     - ruff format . --exclude generated/
 
@@ -49,10 +47,8 @@ test:
   needs:
     - job: setup
       artifacts: true
-  variables:
-    VIRTUAL_ENV: /ci/.venv
-    PATH: /ci/.venv/bin:$PATH
   script:
+    - export PATH="/ci/.venv/bin:$PATH"
     - pytest tests/ -v
 
 build_image:
