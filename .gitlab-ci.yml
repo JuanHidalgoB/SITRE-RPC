@@ -21,6 +21,8 @@ stages:
 setup:
   stage: setup
   image: simon2123/sitre-rpc-ci:latest
+  variables:
+    UV_PROJECT_ENVIRONMENT: /ci/.venv
   script:
     - make setup
   artifacts:
@@ -34,8 +36,9 @@ lint:
   needs:
     - job: setup
       artifacts: true
+  variables:
+    UV_PROJECT_ENVIRONMENT: /ci/.venv
   script:
-    - uv sync --frozen --no-dev
     - make lint
 
 test:
@@ -44,8 +47,9 @@ test:
   needs:
     - job: setup
       artifacts: true
+  variables:
+    UV_PROJECT_ENVIRONMENT: /ci/.venv
   script:
-    - uv sync --frozen
     - make test
 
 build_image:
