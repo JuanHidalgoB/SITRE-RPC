@@ -23,7 +23,7 @@ from grpc_client import SitreClient
 
 SERVER_ADDR = os.getenv("SITRE_SERVER_ADDR", "localhost:50051")
 
-st.set_page_config(page_title="SITRE-RPC", page_icon="🎙️", layout="centered")
+st.set_page_config(page_title="SITRE", page_icon="🎙️", layout="centered")
 
 st.markdown(
     """
