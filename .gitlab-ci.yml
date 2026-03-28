@@ -19,7 +19,7 @@ stages:
 
 setup:
   stage: setup
-  image: simon2123/sitre-rpc-ci:v2
+  image: simon2123/sitre-rpc-ci:latest
   script:
     # Genera los stubs proto usando el venv pre-instalado en la imagen — sin tocar uv sync
     - mkdir -p generated
@@ -32,7 +32,7 @@ setup:
 
 lint:
   stage: lint & test
-  image: simon2123/sitre-rpc-ci:v2
+  image: simon2123/sitre-rpc-ci:latest
   needs:
     - job: setup
       artifacts: true
@@ -45,7 +45,7 @@ lint:
 
 test:
   stage: lint & test
-  image: simon2123/sitre-rpc-ci:v2
+  image: simon2123/sitre-rpc-ci:latest
   needs:
     - job: setup
       artifacts: true
