@@ -7,11 +7,7 @@
 #   DO_DEPLOY_USER       — Usuario SSH del Droplet (ej. root)
 
 variables:
-  UV_VERSION: "0.5.1"
-  PYTHON_VERSION: "3.10"
-  BASE_LAYER: "bookworm-slim"
   IMAGEN_NAME: "$DOCKERHUB_USERNAME/sitre-rpc"
-  UV_CACHE_DIR: ".uv-cache"
   DOCKER_BUILDKIT: 1
 
 stages:
@@ -20,27 +16,13 @@ stages:
   - build
   - deploy
 
-# Cache compartido para .venv/ — se reutiliza entre pipelines cuando el lockfile no cambia.
-# Solo generated/ viaja como artefacto (KB, no GB).
-.venv_cache: &venv_cache
-  cache:
-    key:
-      files:
-        - pyproject.toml
-        - uv.lock
-    paths:
-      - .uv-cache/
-      - .venv/
-
+# setup genera los stubs proto y los pasa como artefacto (KB).
+# Usa la imagen CI que ya tiene todas las deps pre-instaladas.
 setup:
   stage: setup
-  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
-  before_script:
-    - apt-get update -qq && apt-get install -y --no-install-recommends make ffmpeg
-    - rm -rf /var/lib/apt/lists/*
+  image: simon2123/sitre-rpc-ci:latest
   script:
     - make setup
-  <<: *venv_cache
   artifacts:
     paths:
       - generated/
@@ -48,29 +30,23 @@ setup:
 
 lint:
   stage: lint & test
-  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  image: simon2123/sitre-rpc-ci:latest
   needs:
     - job: setup
       artifacts: true
-  before_script:
-    - apt-get update -qq && apt-get install -y --no-install-recommends make
-    - rm -rf /var/lib/apt/lists/*
   script:
+    - uv sync --frozen --no-dev
     - make lint
-  <<: *venv_cache
 
 test:
   stage: lint & test
-  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  image: simon2123/sitre-rpc-ci:latest
   needs:
     - job: setup
       artifacts: true
-  before_script:
-    - apt-get update -qq && apt-get install -y --no-install-recommends make ffmpeg
-    - rm -rf /var/lib/apt/lists/*
   script:
+    - uv sync --frozen
     - make test
-  <<: *venv_cache
 
 build_image:
   stage: build
