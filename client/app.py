@@ -355,8 +355,8 @@ st.markdown(
     """
 <div class="hero">
     <div class="hero-eyebrow">Sistema distribuido · gRPC · IA</div>
-    <div class="hero-title">SITRE-RPC</div>
-    <div class="hero-sub">// Transcripción automática &amp; Resumen ejecutivo en español</div>
+    <div class="hero-title">SITRE</div>
+    <div class="hero-sub">Transcripción automática &amp; Resumen ejecutivo en español</div>
 </div>
 """,
     unsafe_allow_html=True,

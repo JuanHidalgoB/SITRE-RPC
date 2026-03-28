@@ -20,8 +20,18 @@ stages:
   - build
   - deploy
 
-# Instala dependencias con UV y compila los stubs de gRPC.
-# Pasa el entorno virtual y los stubs a los siguientes jobs via artefactos.
+# Cache compartido para .venv/ — se reutiliza entre pipelines cuando el lockfile no cambia.
+# Solo generated/ viaja como artefacto (KB, no GB).
+.venv_cache: &venv_cache
+  cache:
+    key:
+      files:
+        - pyproject.toml
+        - uv.lock
+    paths:
+      - .uv-cache/
+      - .venv/
+
 setup:
   stage: setup
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
@@ -30,21 +40,12 @@ setup:
     - rm -rf /var/lib/apt/lists/*
   script:
     - make setup
-  cache:
-    key:
-      files:
-        - pyproject.toml
-        - uv.lock
-    paths:
-      - .uv-cache/
+  <<: *venv_cache
   artifacts:
     paths:
-      - .venv/
       - generated/
     expire_in: 1 hour
 
-# Revisa y formatea el código con Ruff.
-# Corre en paralelo con test, ambos dependen de setup.
 lint:
   stage: lint & test
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
@@ -56,9 +57,8 @@ lint:
     - rm -rf /var/lib/apt/lists/*
   script:
     - make lint
+  <<: *venv_cache
 
-# Ejecuta la suite de pruebas con pytest.
-# Corre en paralelo con lint, ambos dependen de setup.
 test:
   stage: lint & test
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
@@ -70,8 +70,8 @@ test:
     - rm -rf /var/lib/apt/lists/*
   script:
     - make test
+  <<: *venv_cache
 
-# Construye la imagen Docker y la sube a DockerHub (solo en main).
 build_image:
   stage: build
   needs:
@@ -98,7 +98,6 @@ build_image:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
-# Despliega en el Droplet vía SSH (solo en main).
 deploy:
   stage: deploy
   needs:
