@@ -17,4 +17,4 @@ WORKDIR /ci
 COPY pyproject.toml uv.lock ./
 
 # Instala todas las deps (prod + dev) en el sistema — sin proyecto, solo deps
-RUN uv sync --frozen --no-install-project
+RUN uv sync --frozen --group server --group client --group dev --no-install-project

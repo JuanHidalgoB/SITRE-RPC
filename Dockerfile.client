@@ -1,0 +1,23 @@
+# SITRE-RPC — Imagen del cliente Streamlit (liviana: solo streamlit + grpcio)
+
+FROM python:3.10-slim
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --group client --no-dev --no-install-project
+
+COPY proto/   proto/
+COPY client/  client/
+
+RUN mkdir -p generated && \
+    .venv/bin/python -m grpc_tools.protoc \
+        -I proto \
+        --python_out=generated \
+        --grpc_python_out=generated \
+        proto/sitre.proto && \
+    touch generated/__init__.py
+
+ENV PATH="/app/.venv/bin:$PATH"

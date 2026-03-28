@@ -13,7 +13,7 @@ help:
 	@echo "  make clean      : Borrar generated/ y __pycache__"
 
 setup:
-	uv sync
+	uv sync --group server --group client
 	uv run python -c "import pathlib; pathlib.Path('generated').mkdir(exist_ok=True); pathlib.Path('generated/__init__.py').touch()"
 	uv run python -m grpc_tools.protoc -I proto --python_out=generated --grpc_python_out=generated proto/sitre.proto
 	@echo "Listo. Ejecuta: make server / make client"

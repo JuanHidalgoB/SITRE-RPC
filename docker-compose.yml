@@ -4,7 +4,7 @@ services:
 
   #Servidor gRPC
   server:
-    build: .
+    image: simon2123/sitre-rpc-server:latest
     command: python server/main.py
     ports:
       - "50051:50051"
@@ -17,7 +17,7 @@ services:
 
   #Cliente Streamlit
   client:
-    build: .
+    image: simon2123/sitre-rpc-client:latest
     command: streamlit run client/app.py --server.port 8501 --server.headless true
     ports:
       - "8501:8501"

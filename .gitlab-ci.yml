@@ -7,7 +7,8 @@
 #   DO_DEPLOY_USER       — Usuario SSH del Droplet (ej. root)
 
 variables:
-  IMAGEN_NAME: "$DOCKERHUB_USERNAME/sitre-rpc"
+  SERVER_IMAGE: "$DOCKERHUB_USERNAME/sitre-rpc-server"
+  CLIENT_IMAGE: "$DOCKERHUB_USERNAME/sitre-rpc-client"
   DOCKER_BUILDKIT: 1
 
 stages:
@@ -16,15 +17,14 @@ stages:
   - build
   - deploy
 
-# setup genera los stubs proto y los pasa como artefacto (KB).
-# Usa la imagen CI que ya tiene todas las deps pre-instaladas.
 setup:
   stage: setup
   image: simon2123/sitre-rpc-ci:latest
-  variables:
-    UV_PROJECT_ENVIRONMENT: /ci/.venv
   script:
-    - make setup
+    # Genera los stubs proto usando el venv pre-instalado en la imagen — sin tocar uv sync
+    - mkdir -p generated
+    - /ci/.venv/bin/python -m grpc_tools.protoc -I proto --python_out=generated --grpc_python_out=generated proto/sitre.proto
+    - touch generated/__init__.py
   artifacts:
     paths:
       - generated/
@@ -37,9 +37,11 @@ lint:
     - job: setup
       artifacts: true
   variables:
-    UV_PROJECT_ENVIRONMENT: /ci/.venv
+    VIRTUAL_ENV: /ci/.venv
+    PATH: /ci/.venv/bin:$PATH
   script:
-    - make lint
+    - ruff check . --fix --exclude generated/
+    - ruff format . --exclude generated/
 
 test:
   stage: lint & test
@@ -48,9 +50,10 @@ test:
     - job: setup
       artifacts: true
   variables:
-    UV_PROJECT_ENVIRONMENT: /ci/.venv
+    VIRTUAL_ENV: /ci/.venv
+    PATH: /ci/.venv/bin:$PATH
   script:
-    - make test
+    - pytest tests/ -v
 
 build_image:
   stage: build
@@ -65,16 +68,30 @@ build_image:
   before_script:
     - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
   script:
-    - docker pull $IMAGEN_NAME:latest || true
+    # Servidor (imagen pesada — solo cambia si tocan ML o server/)
+    - docker pull $SERVER_IMAGE:latest || true
     - >
       docker build
-      --cache-from $IMAGEN_NAME:latest
+      --cache-from $SERVER_IMAGE:latest
       --build-arg BUILDKIT_INLINE_CACHE=1
-      -t $IMAGEN_NAME:$CI_COMMIT_SHORT_SHA
-      -t $IMAGEN_NAME:latest
+      -f Dockerfile.server
+      -t $SERVER_IMAGE:$CI_COMMIT_SHORT_SHA
+      -t $SERVER_IMAGE:latest
       .
-    - docker push $IMAGEN_NAME:$CI_COMMIT_SHORT_SHA
-    - docker push $IMAGEN_NAME:latest
+    - docker push $SERVER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $SERVER_IMAGE:latest
+    # Cliente (imagen liviana — streamlit + grpcio)
+    - docker pull $CLIENT_IMAGE:latest || true
+    - >
+      docker build
+      --cache-from $CLIENT_IMAGE:latest
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      -f Dockerfile.client
+      -t $CLIENT_IMAGE:$CI_COMMIT_SHORT_SHA
+      -t $CLIENT_IMAGE:latest
+      .
+    - docker push $CLIENT_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CLIENT_IMAGE:latest
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
 
@@ -90,9 +107,11 @@ deploy:
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
     - ssh-keyscan -H "$DO_DROPLET_IP" >> ~/.ssh/known_hosts
   script:
+    - scp docker-compose.yml "$DO_DEPLOY_USER@$DO_DROPLET_IP:/opt/sitre-rpc/docker-compose.yml"
     - |
       ssh "$DO_DEPLOY_USER@$DO_DROPLET_IP" "
-        docker pull $IMAGEN_NAME:latest &&
+        docker pull $SERVER_IMAGE:latest &&
+        docker pull $CLIENT_IMAGE:latest &&
         cd /opt/sitre-rpc &&
         docker compose up -d --remove-orphans
       "
